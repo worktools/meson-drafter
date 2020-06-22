@@ -19,7 +19,13 @@
    (merge
     base-info
     {:styles [(<< "http://~(get-ip!):8100/main.css") "/entry/main.css"],
-     :scripts [{:src "/client.js", :type :script, :defer? true}],
+     :scripts [{:src "https://unpkg.com/prettier@2.0.5/standalone.js",
+                :type :script,
+                :defer? true}
+               {:src "https://unpkg.com/prettier@2.0.5/parser-typescript.js",
+                :type :script,
+                :defer? true}
+               {:src "/client.js", :type :script, :defer? true}],
      :inline-styles []})))
 
 (defn prod-page []
@@ -33,9 +39,17 @@
      (merge
       base-info
       {:styles [(:release-ui config/site)],
-       :scripts (map
-                 (fn [x] {:type :script, :src (-> x :output-name prefix-cdn), :defer? true})
-                 assets),
+       :scripts (concat
+                 [{:type :script,
+                   :src "https://unpkg.com/prettier@2.0.5/standalone.js",
+                   :defer? true}
+                  {:type :script,
+                   :src "https://unpkg.com/prettier@2.0.5/parser-typescript.js",
+                   :defer? true}]
+                 (map
+                  (fn [x]
+                    {:type :script, :src (-> x :output-name prefix-cdn), :defer? true})
+                  assets)),
        :ssr "respo-ssr",
        :inline-styles [(slurp "./entry/main.css")]}))))
 
