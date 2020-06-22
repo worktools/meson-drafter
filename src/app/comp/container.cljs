@@ -6,7 +6,10 @@
             [respo.comp.space :refer [=<]]
             [reel.comp.reel :refer [comp-reel]]
             [respo-md.comp.md :refer [comp-md]]
-            [app.config :refer [dev?]]))
+            [app.config :refer [dev?]]
+            [respo-ui.comp :refer [comp-tabs comp-placeholder]]
+            [app.comp.form-drafter :refer [comp-form-drafter]]
+            [app.comp.form-previewer :refer [comp-form-previewer]]))
 
 (defcomp
  comp-container
@@ -14,21 +17,18 @@
  (let [store (:store reel)
        states (:states store)
        cursor (or (:cursor states) [])
-       state (or (:data states) {:content ""})]
+       state (or (:data states) {:page :form})]
    (div
-    {:style (merge ui/global ui/row)}
-    (textarea
-     {:value (:content state),
-      :placeholder "Content",
-      :style (merge ui/expand ui/textarea {:height 320}),
-      :on-input (fn [e d!] (d! cursor (assoc state :content (:value e))))})
-    (=< 8 nil)
-    (div
-     {:style ui/expand}
-     (comp-md "This is some content with `code`")
-     (=< "8px" nil)
-     (button
-      {:style ui/button,
-       :inner-text "Run",
-       :on-click (fn [e d!] (println (:content state)))}))
+    {:style (merge ui/fullscreen ui/global ui/row)}
+    (comp-tabs
+     {:selected (:page state),
+      :width 160,
+      :style {:border-right (str "1px solid " (hsl 0 0 90))}}
+     [{:name :form, :title "Form"}]
+     (fn [info d!] ))
+    (comp-form-previewer (>> states :previewer) (or (:fields store) []))
+    (comp-form-drafter
+     (>> states :form)
+     (:fields store)
+     {:border-left (str "1px solid " (hsl 0 0 90))})
     (when dev? (comp-reel (>> states :reel) reel {})))))
