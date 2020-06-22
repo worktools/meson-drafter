@@ -1,7 +1,11 @@
 
-/target
+/target/
 /dist
 /node_modules
-.shadow-cljs/
 .cpcache/
+.shadow-cljs/
+
 .nrepl-port
+
+.DS_Store
+pom.xml
