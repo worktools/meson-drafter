@@ -9,7 +9,8 @@
             [app.config :refer [dev?]]
             [respo-ui.comp :refer [comp-tabs comp-placeholder]]
             [app.comp.form-drafter :refer [comp-form-drafter]]
-            [app.comp.form-previewer :refer [comp-form-previewer]]))
+            [app.comp.form-previewer :refer [comp-form-previewer]]
+            [app.comp.live-demo :refer [comp-live-demo]]))
 
 (defcomp
  comp-container
@@ -22,10 +23,11 @@
     {:style (merge ui/fullscreen ui/global ui/row)}
     (comp-tabs
      {:selected (:page state),
-      :width 160,
+      :width 80,
       :style {:border-right (str "1px solid " (hsl 0 0 90))}}
      [{:name :form, :title "Form"}]
      (fn [info d!] ))
+    (comp-live-demo (>> states :demo) (:fields store) {})
     (comp-form-previewer (>> states :previewer) (or (:fields store) []))
     (comp-form-drafter
      (>> states :form)

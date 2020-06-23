@@ -9,7 +9,8 @@
             [reel.schema :as reel-schema]
             [cljs.reader :refer [read-string]]
             [app.config :as config]
-            [cumulo-util.core :refer [repeat!]]))
+            [cumulo-util.core :refer [repeat! delay!]]
+            [app.comp.live-demo :refer [send-message!]]))
 
 (defonce *reel
   (atom (-> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store))))
@@ -37,7 +38,14 @@
   (.addEventListener js/window "beforeunload" persist-storage!)
   (repeat! 60 persist-storage!)
   (let [raw (.getItem js/localStorage (:storage-key config/site))]
-    (when (some? raw) (dispatch! :hydrate-storage (read-string raw))))
+    (when (some? raw)
+      (dispatch! :hydrate-storage (read-string raw))
+      (delay!
+       2
+       (fn []
+         (send-message!
+          (:fields (read-string raw))
+          "http://fe.jimu.io/meson-form/#/preview-mode")))))
   (println "App started."))
 
 (defn reload! []

@@ -12,6 +12,7 @@
        :input (conj fields {:type :input, :label "TODO", :required? false, :name "TODO"})
        :textarea
          (conj fields {:type :textarea, :label "TODO", :required? false, :name "TODO"})
+       :number (conj fields {:type :number, :label "TODO", :required? false, :name "TODO"})
        :select
          (conj
           fields
@@ -21,6 +22,10 @@
            :required? false,
            :name "TODO"})
        :decorative (conj fields {:type :decorative, :render nil})
+       :custom
+         (conj
+          fields
+          {:type :custom, :label "TODO", :required? false, :name "TODO", :render nil})
        (do (println "unknown type" data) fields)))))
 
 (defn drag-field [store data]
