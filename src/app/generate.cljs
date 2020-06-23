@@ -6,8 +6,7 @@
    (js/prettier.format text (clj->js {:parser :typescript, :plugins js/prettierPlugins}))
    (catch js/Error error (str error "\n" "\n" text))))
 
-(defn gen-decorative [field]
-  "{\ntype: \"decorative\",\nrender: () => <div>TODO DECORATOR</div>\n}")
+(defn gen-decorative [field] "{\ntype: \"decorative\",\nrender: () => \"TODO\"\n}")
 
 (defn gen-item [k v] (str k ": " v))
 

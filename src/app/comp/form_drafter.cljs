@@ -27,27 +27,35 @@
 
 (defcomp
  comp-field-info
- (field path)
- (div
-  {:style (merge
-           ui/column
-           {:background-color (hsl 0 0 98),
-            :padding "2px 8px",
-            :margin-bottom 8,
-            :border (str "1px solid " (hsl 0 0 90))}),
-   :draggable true,
-   :on-dragstart (fn [e d!] (-> (:event e) .-dataTransfer (.setData "path" (pr-str path)))),
-   :on-dragover (fn [e d!] (.preventDefault (:event e))),
-   :on-drop (fn [e d!]
-     (let [from (read-string (-> (:event e) .-dataTransfer (.getData "path")))]
-       (d! :drag-field {:from from, :to path})))}
-  (div
-   {:style ui/row-parted}
-   (<> (render-field-type (:type field)) {:font-family ui/font-fancy, :font-size 16})
-   (comp-icon
-    :x
-    {:font-size 14, :color (hsl 0 80 70), :cursor :pointer}
-    (fn [e d!] (d! :remove-field path))))))
+ (states field path)
+ (let [cursor (:cursor states), state (or (:data states) {:dragover? false})]
+   (div
+    {:style (merge
+             ui/column
+             {:background-color (hsl 0 0 98),
+              :padding "2px 8px",
+              :margin-bottom 8,
+              :border (str "1px solid " (hsl 0 0 90))}
+             (if (:dragover? state) {:outline (str "1px solid " (hsl 200 80 80))})),
+     :draggable true,
+     :on-dragstart (fn [e d!]
+       (-> (:event e) .-dataTransfer (.setData "path" (pr-str path)))),
+     :on-dragover (fn [e d!] (.preventDefault (:event e))),
+     :on-drop (fn [e d!]
+       (let [from (read-string (-> (:event e) .-dataTransfer (.getData "path")))]
+         (d! :drag-field {:from from, :to path})
+         (d! cursor (assoc state :dragover? false)))),
+     :on-dragenter (fn [e d!] (d! cursor (assoc state :dragover? true))),
+     :on-dragleave (fn [e d!]
+       (when-not (-> e :event .-currentTarget (.contains (-> e :event .-relatedTarget)))
+         (d! cursor (assoc state :dragover? false))))}
+    (div
+     {:style ui/row-parted}
+     (<> (render-field-type (:type field)) {:font-family ui/font-fancy, :font-size 16})
+     (comp-icon
+      :x
+      {:font-size 14, :color (hsl 0 80 70), :cursor :pointer}
+      (fn [e d!] (d! :remove-field path)))))))
 
 (defcomp
  comp-form-drafter
@@ -64,7 +72,9 @@
      {}
      (list->
       {}
-      (->> fields (map-indexed (fn [idx field] [idx (comp-field-info field [idx])]))))
+      (->> fields
+           (map-indexed
+            (fn [idx field] [idx (comp-field-info (>> states idx) field [idx])]))))
      (div
       {:style (merge ui/center {:padding 8}), :onc nil}
       (a
