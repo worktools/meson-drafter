@@ -17,9 +17,11 @@
 
 (def field-types
   [{:value :input, :display "Input"}
+   {:value :number, :display "Number"}
    {:value :textarea, :display "Textarea"}
    {:value :select, :display "Select"}
-   {:value :decorative, :display "Decorative"}])
+   {:value :decorative, :display "Decorative"}
+   {:value :custom, :display "Custom"}])
 
 (defn render-field-type [kind]
   (let [target (find-first (fn [info] (= kind (:value info))) field-types)]
@@ -36,7 +38,7 @@
               :padding "2px 8px",
               :margin-bottom 8,
               :border (str "1px solid " (hsl 0 0 90))}
-             (if (:dragover? state) {:outline (str "1px solid " (hsl 200 80 80))})),
+             (if (:dragover? state) {:outline (str "2px solid " (hsl 200 80 70))})),
      :draggable true,
      :on-dragstart (fn [e d!]
        (-> (:event e) .-dataTransfer (.setData "path" (pr-str path)))),

@@ -6,7 +6,11 @@
    (js/prettier.format text (clj->js {:parser :typescript, :plugins js/prettierPlugins}))
    (catch js/Error error (str error "\n" "\n" text))))
 
-(defn gen-decorative [field] "{\ntype: \"decorative\",\nrender: () => \"TODO\"\n}")
+(defn gen-custom [field]
+  "{\ntype: \"custom\",\nname: \"TODO\",\nlabel: \"TODO\",\nrender: () => \"TODO CUSTOM\",\nvalidator: (x) => null\n}")
+
+(defn gen-decorative [field]
+  "{\ntype: \"decorative\",\nrender: () => \"TODO DECORATION\"\n}")
 
 (defn gen-item [k v] (str k ": " v))
 
@@ -16,7 +20,19 @@
                     (gen-item "label" (pr-str "TODO"))
                     (gen-item "required" "true")
                     (gen-item "inputProps" "{}")
-                    (gen-item "placeholder" (pr-str "TODO"))]
+                    (gen-item "placeholder" (pr-str "TODO"))
+                    (gen-item "validator" "(x)=>null")]
+                   (string/join (str "," "\n")))]
+    (str "{" items "}")))
+
+(defn gen-number [field]
+  (let [items (->> [(gen-item "type" (pr-str "number"))
+                    (gen-item "name" (pr-str "TODO"))
+                    (gen-item "label" (pr-str "TODO"))
+                    (gen-item "required" "true")
+                    (gen-item "inputProps" "{}")
+                    (gen-item "placeholder" (pr-str "TODO"))
+                    (gen-item "validator" "(x)=>null")]
                    (string/join (str "," "\n")))]
     (str "{" items "}")))
 
@@ -27,7 +43,8 @@
                     (gen-item "required" "true")
                     (gen-item "inputProps" "{}")
                     (gen-item "placeholder" (pr-str "TODO"))
-                    (gen-item "options" (js/JSON.stringify (clj->js (:options field))))]
+                    (gen-item "options" (js/JSON.stringify (clj->js (:options field))))
+                    (gen-item "validator" "(x)=>null")]
                    (string/join (str "," "\n")))]
     (str "{" items "}")))
 
@@ -50,6 +67,8 @@
                               :textarea (gen-textarea field)
                               :select (gen-select field)
                               :decorative (gen-decorative field)
+                              :custom (gen-custom field)
+                              :number (gen-number field)
                               (do (println "Unknown:" field) "{type:\"\"}"))))
                          (string/join (str "," "\n")))]
     (format-typescript (str "[" fields-code "]"))))
