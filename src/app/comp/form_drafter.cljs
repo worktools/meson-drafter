@@ -21,7 +21,8 @@
    {:value :textarea, :display "Textarea"}
    {:value :select, :display "Select"}
    {:value :decorative, :display "Decorative"}
-   {:value :custom, :display "Custom"}])
+   {:value :custom, :display "Custom"}
+   {:value :group, :display "Group"}])
 
 (defn render-field-type [kind]
   (let [target (find-first (fn [info] (= kind (:value info))) field-types)]
@@ -57,7 +58,13 @@
      (comp-icon
       :x
       {:font-size 14, :color (hsl 0 80 70), :cursor :pointer}
-      (fn [e d!] (d! :remove-field path)))))))
+      (fn [e d!] (d! :remove-field path))))
+    (if (= :group (:type field))
+      (div
+       {:style {:margin-left 16,
+                :border-left (str "1px solid " (hsl 0 0 90)),
+                :padding "0px 8px"}}
+       (<> "CHILDREN"))))))
 
 (defcomp
  comp-form-drafter

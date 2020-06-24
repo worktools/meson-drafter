@@ -3,30 +3,30 @@
   (:require [respo.cursor :refer [update-states]]
             [medley.core :refer [remove-nth insert-nth]]))
 
-(defn create-field [store data]
+(defn expand-field [data op-id]
+  (case data
+    :input {:type :input, :label (str "TODO_" op-id), :required? false, :name "TODO"}
+    :textarea {:type :textarea, :label "TODO", :required? false, :name (str "TODO_" op-id)}
+    :number {:type :number, :label "TODO", :required? false, :name (str "TODO_" op-id)}
+    :select
+      {:type :select,
+       :options [{:value :todo, :display :TODO}],
+       :label "TODO",
+       :required? false,
+       :name (str "TODO_" op-id)}
+    :decorative {:type :decorative, :render nil}
+    :custom
+      {:type :custom, :label "TODO", :required? false, :name (str "TODO_" op-id), :render nil}
+    :group {:type :group, :children []}
+    (do (println "unknown type for field" data) nil)))
+
+(defn create-field [store data op-id op-time]
   (update
    store
    :fields
    (fn [fields]
-     (case data
-       :input (conj fields {:type :input, :label "TODO", :required? false, :name "TODO"})
-       :textarea
-         (conj fields {:type :textarea, :label "TODO", :required? false, :name "TODO"})
-       :number (conj fields {:type :number, :label "TODO", :required? false, :name "TODO"})
-       :select
-         (conj
-          fields
-          {:type :select,
-           :options [{:value :todo, :display :TODO}],
-           :label "TODO",
-           :required? false,
-           :name "TODO"})
-       :decorative (conj fields {:type :decorative, :render nil})
-       :custom
-         (conj
-          fields
-          {:type :custom, :label "TODO", :required? false, :name "TODO", :render nil})
-       (do (println "unknown type" data) fields)))))
+     (let [field-data (expand-field data op-id)]
+       (if (some? field-data) (conj fields field-data) fields)))))
 
 (defn drag-field [store data]
   (update
@@ -42,18 +42,13 @@
 (defn remove-field [store data]
   (cond
     (= 1 (count data))
-      (update
-       store
-       :fields
-       (fn [fields]
-         (println (remove-nth (first data) fields))
-         (vec (remove-nth (first data) fields))))
+      (update store :fields (fn [fields] (vec (remove-nth (first data) fields))))
     :else (do (println "unexpected data:" data) store)))
 
 (defn updater [store op data op-id op-time]
   (case op
     :states (update-states store data)
-    :create-field (create-field store data)
+    :create-field (create-field store data op-id op-time)
     :remove-field (remove-field store data)
     :drag-field (drag-field store data)
     :hydrate-storage data

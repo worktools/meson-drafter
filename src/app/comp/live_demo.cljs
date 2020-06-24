@@ -27,7 +27,6 @@
  effect-post-data
  (fields url)
  (action el *local at-place?)
- (println action)
  (when (= action :update) (send-message! fields url)))
 
 (defcomp
@@ -37,11 +36,15 @@
        state (or (:data states) {:url "http://fe.jimu.io/meson-form/#/preview-mode"})]
    [(effect-post-data fields (:url state))
     (div
-     {:style (merge ui/expand ui/column)}
+     {:style (merge ui/expand ui/column {:flex 1.5} styles)}
      (div
       {:style ui/row}
       (input
        {:style (merge ui/expand ui/input),
         :value (:url state),
         :on-input (fn [e d!] (d! cursor (assoc state :url (:value e))))}))
-     (create-element :iframe {:style ui/expand, :id "demo-frame", :src (:url state)}))]))
+     (create-element
+      :iframe
+      {:style (merge ui/expand {:border :none, :background-color (hsl 0 0 96)}),
+       :id "demo-frame",
+       :src (:url state)}))]))

@@ -27,8 +27,11 @@
       :style {:border-right (str "1px solid " (hsl 0 0 90))}}
      [{:name :form, :title "Form"}]
      (fn [info d!] ))
-    (comp-live-demo (>> states :demo) (:fields store) {})
     (comp-form-previewer (>> states :previewer) (or (:fields store) []))
+    (comp-live-demo
+     (>> states :demo)
+     (:fields store)
+     {:border-left (str "1px solid " (hsl 0 0 90))})
     (comp-form-drafter
      (>> states :form)
      (:fields store)
