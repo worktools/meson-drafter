@@ -1,6 +1,10 @@
 
 (ns app.generate (:require [clojure.string :as string]))
 
+(declare gen-group)
+
+(declare gen-form-items)
+
 (defn format-typescript [text]
   (try
    (js/prettier.format text (clj->js {:parser :typescript, :plugins js/prettierPlugins}))
@@ -20,13 +24,6 @@
 
 (defn gen-decorative [field]
   "{\ntype: \"decorative\",\nrender: () => \"TODO DECORATION\"\n}")
-
-(defn gen-group [field]
-  (let [items (->> [(gen-item "type" (pr-str "group"))
-                    (gen-item "label" (pr-str "TODO"))
-                    (gen-item "children" (pr-str []))]
-                   (string/join (str "," "\n")))]
-    (str "{" items "}")))
 
 (defn gen-input [field]
   (let [items (->> [(gen-item "type" (pr-str "input"))
@@ -72,18 +69,30 @@
                    (string/join (str "," "\n")))]
     (str "{" items "}")))
 
+(defn gen-group [field]
+  (let [items (->> [(gen-item "type" (pr-str "group"))
+                    (gen-item "label" (pr-str "TODO"))
+                    (gen-item "horizontal" (pr-str true))
+                    (gen-item "itemWidth" (pr-str "50%"))
+                    (gen-item "children" (gen-form-items (:children field) {}))]
+                   (string/join (str "," "\n")))]
+    (str "{" items "}")))
+
+(defn gen-form-items [fields]
+  (let [code (->> fields
+                  (map
+                   (fn [field]
+                     (case (:type field)
+                       :input (gen-input field)
+                       :textarea (gen-textarea field)
+                       :select (gen-select field)
+                       :decorative (gen-decorative field)
+                       :custom (gen-custom field)
+                       :number (gen-number field)
+                       :group (gen-group field)
+                       (do (println "Unknown:" field) "{type:\"\"}"))))
+                  (string/join (str "," "\n")))]
+    (str "[" code "]")))
+
 (defn generate-form-code [fields options]
-  (let [fields-code (->> fields
-                         (map
-                          (fn [field]
-                            (case (:type field)
-                              :input (gen-input field)
-                              :textarea (gen-textarea field)
-                              :select (gen-select field)
-                              :decorative (gen-decorative field)
-                              :custom (gen-custom field)
-                              :number (gen-number field)
-                              :group (gen-group field)
-                              (do (println "Unknown:" field) "{type:\"\"}"))))
-                         (string/join (str "," "\n")))]
-    (format-typescript (str "[" fields-code "]"))))
+  (let [fields-code (gen-form-items fields)] (format-typescript fields-code)))

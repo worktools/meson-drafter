@@ -10,7 +10,8 @@
             [respo-ui.comp :refer [comp-tabs comp-placeholder]]
             [app.comp.form-drafter :refer [comp-form-drafter]]
             [app.comp.form-previewer :refer [comp-form-previewer]]
-            [app.comp.live-demo :refer [comp-live-demo]]))
+            [app.comp.live-demo :refer [comp-live-demo]]
+            [medley.core :refer [dissoc-in]]))
 
 (defcomp
  comp-container

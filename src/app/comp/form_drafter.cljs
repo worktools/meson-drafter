@@ -31,7 +31,15 @@
 (defcomp
  comp-field-info
  (states field path)
- (let [cursor (:cursor states), state (or (:data states) {:dragover? false})]
+ (let [cursor (:cursor states)
+       state (or (:data states) {:dragover? false})
+       create-menu (use-modal-menu
+                    (>> states :create)
+                    {:title "Create field",
+                     :style {},
+                     :items field-types,
+                     :on-result (fn [result d!]
+                       (d! :create-field {:type (:value result), :path path}))})]
    (div
     {:style (merge
              ui/column
@@ -61,10 +69,23 @@
       (fn [e d!] (d! :remove-field path))))
     (if (= :group (:type field))
       (div
-       {:style {:margin-left 16,
-                :border-left (str "1px solid " (hsl 0 0 90)),
-                :padding "0px 8px"}}
-       (<> "CHILDREN"))))))
+       {:style {:margin-left 16}}
+       (list->
+        {}
+        (->> (:children field)
+             (map-indexed
+              (fn [idx child] [idx (comp-field-info (>> states idx) child (conj path idx))]))))
+       (div
+        {:style (merge ui/center {:padding 8})}
+        (a
+         {:style (merge ui/link {:line-height "14px", :height "14px"}),
+          :inner-text "Add",
+          :on-click (fn [e d!] ((:show create-menu) d!)),
+          :on-dragover (fn [e d!] (.preventDefault (:event e))),
+          :on-drop (fn [e d!]
+            (let [from (read-string (-> (:event e) .-dataTransfer (.getData "path")))]
+              (d! :drag-field {:from from, :to (conj path (count (:children field)))})))}))))
+    (:ui create-menu))))
 
 (defcomp
  comp-form-drafter
@@ -74,7 +95,8 @@
                     {:title "Create field",
                      :style {},
                      :items field-types,
-                     :on-result (fn [result d!] (d! :create-field (:value result)))})]
+                     :on-result (fn [result d!]
+                       (d! :create-field {:type (:value result), :path []}))})]
    (div
     {:style (merge ui/expand styles {:padding 16})}
     (div
