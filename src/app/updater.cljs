@@ -66,7 +66,6 @@
   (let [from (:from data)
         to (:to data)
         target (get-in store (concat [:fields] (gen-data-path from) [(last from)]))]
-    (println "target" target (concat [:fields] (gen-data-path from) [(last from)]))
     (update
      store
      :fields
@@ -88,15 +87,13 @@
                 (gen-data-path to)
                 (fn [xs] (->> xs (insert-nth (last to) target) (vec)))))
          (move-behind? from to)
-           (do
-            (println "behind")
-            (-> fields
-                (safe-update-in
-                 (gen-data-path from)
-                 (fn [xs] (->> xs (remove-nth (last from)) (vec))))
-                (safe-update-in
-                 (gen-data-path to)
-                 (fn [xs] (->> xs (insert-nth (last to) target) (vec))))))
+           (-> fields
+               (safe-update-in
+                (gen-data-path to)
+                (fn [xs] (->> xs (insert-nth (last to) target) (vec))))
+               (safe-update-in
+                (gen-data-path from)
+                (fn [xs] (->> xs (remove-nth (last from)) (vec)))))
          :else
            (-> fields
                (safe-update-in
