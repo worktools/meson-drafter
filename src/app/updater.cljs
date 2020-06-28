@@ -3,58 +3,130 @@
   (:require [respo.cursor :refer [update-states]]
             [medley.core :refer [remove-nth insert-nth]]))
 
-(defn create-field [store data]
-  (update
-   store
-   :fields
-   (fn [fields]
-     (case data
-       :input (conj fields {:type :input, :label "TODO", :required? false, :name "TODO"})
-       :textarea
-         (conj fields {:type :textarea, :label "TODO", :required? false, :name "TODO"})
-       :number (conj fields {:type :number, :label "TODO", :required? false, :name "TODO"})
-       :select
-         (conj
-          fields
-          {:type :select,
-           :options [{:value :todo, :display :TODO}],
-           :label "TODO",
-           :required? false,
-           :name "TODO"})
-       :decorative (conj fields {:type :decorative, :render nil})
-       :custom
-         (conj
-          fields
-          {:type :custom, :label "TODO", :required? false, :name "TODO", :render nil})
-       (do (println "unknown type" data) fields)))))
+(defn contains-branch? [from to]
+  (cond
+    (and (empty? from) (not (empty? to))) true
+    (= (first from) (first to)) (recur (rest from) (rest to))
+    :else false))
+
+(defn expand-field [data op-id]
+  (case data
+    :input {:type :input, :label (str "TODO_" op-id), :required? false, :name "TODO"}
+    :textarea {:type :textarea, :label "TODO", :required? false, :name (str "TODO_" op-id)}
+    :number {:type :number, :label "TODO", :required? false, :name (str "TODO_" op-id)}
+    :select
+      {:type :select,
+       :options [{:value :todo, :display :TODO}],
+       :label "TODO",
+       :required? false,
+       :name (str "TODO_" op-id)}
+    :decorative {:type :decorative, :render nil}
+    :custom
+      {:type :custom, :label "TODO", :required? false, :name (str "TODO_" op-id), :render nil}
+    :group {:type :group, :label "TODO", :children []}
+    :nested {:type :nested, :label "TODO", :children []}
+    (do (println "unknown type for field" data) nil)))
+
+(defn create-field [store data op-id op-time]
+  (let [field-type (:type data)
+        path (:path data)
+        data-path (->> (:path data) (mapcat (fn [x] [x :children])))]
+    (update-in
+     store
+     (concat [:fields] data-path)
+     (fn [fields]
+       (let [field-data (expand-field field-type op-id)]
+         (if (some? field-data) (conj fields field-data) fields))))))
+
+(defn gen-data-path [xs] (->> xs butlast (mapcat (fn [x] [x :children]))))
+
+(defn move-behind? [from to]
+  (cond
+    (or (empty? from) (empty? to)) false
+    (= (first from) (first to)) (recur (rest from) (rest to))
+    :else (< (first from) (first to))))
+
+(defn move-front? [from to]
+  (cond
+    (or (empty? from) (empty? to)) false
+    (= (first from) (first to)) (recur (rest from) (rest to))
+    :else (> (first from) (first to))))
+
+(defn on-same-branch? [from to]
+  (and (= (count from) (count to)) (= (butlast from) (butlast to))))
+
+(defn safe-insert-nth [idx y xs]
+  (if (or false (> idx (count xs))) (conj (vec xs) y) (insert-nth idx y xs)))
+
+(defn safe-update-in [data path f]
+  "do not break when path is empty"
+  (if (empty? path) (f data) (update-in data path f)))
 
 (defn drag-field [store data]
-  (update
-   store
-   :fields
-   (fn [fields]
-     (cond
-       (and (= 1 (count (:from data))) (= 1 (count (:to data))))
-         (let [from (first (:from data)), to (first (:to data))]
-           (->> fields (remove-nth from) (insert-nth to (nth fields from)) (vec)))
-       :else (do (println "Unknown data:" data) fields)))))
+  (let [from (:from data)
+        to (:to data)
+        target (get-in store (concat [:fields] (gen-data-path from) [(last from)]))]
+    (update
+     store
+     :fields
+     (fn [fields]
+       (cond
+         (on-same-branch? from to)
+           (safe-update-in
+            fields
+            (gen-data-path from)
+            (fn [xs]
+              (->> xs (remove-nth (last from)) (safe-insert-nth (last to) target) (vec))))
+         (contains-branch? from to) fields
+         (move-front? from to)
+           (-> fields
+               (safe-update-in
+                (gen-data-path from)
+                (fn [xs] (->> xs (remove-nth (last from)) (vec))))
+               (safe-update-in
+                (gen-data-path to)
+                (fn [xs] (->> xs (insert-nth (last to) target) (vec)))))
+         (move-behind? from to)
+           (-> fields
+               (safe-update-in
+                (gen-data-path to)
+                (fn [xs] (->> xs (insert-nth (last to) target) (vec))))
+               (safe-update-in
+                (gen-data-path from)
+                (fn [xs] (->> xs (remove-nth (last from)) (vec)))))
+         :else
+           (-> fields
+               (safe-update-in
+                (gen-data-path from)
+                (fn [xs] (->> xs (remove-nth (last from)) (vec))))
+               (safe-update-in
+                (gen-data-path to)
+                (fn [xs] (->> xs (insert-nth (last to) target) (vec))))))))))
 
 (defn remove-field [store data]
-  (cond
-    (= 1 (count data))
-      (update
-       store
-       :fields
-       (fn [fields]
-         (println (remove-nth (first data) fields))
-         (vec (remove-nth (first data) fields))))
-    :else (do (println "unexpected data:" data) store)))
+  (let [data-path (->> data butlast (mapcat (fn [x] [x :children])))]
+    (update-in
+     store
+     (concat [:fields] data-path)
+     (fn [fields] (vec (remove-nth (last data) fields))))))
+
+(defn toggle-required [store data]
+  (let [data-path (->> data butlast (mapcat (fn [x] [x :children])))]
+    (update-in store (concat [:fields] data-path [(last data) :required?]) not)))
+
+(defn update-label [store data]
+  (let [path (:path data)
+        text (:text data)
+        data-path (->> path butlast (mapcat (fn [x] [x :children])))]
+    (assoc-in store (concat [:fields] data-path [(last path) :label]) text)))
 
 (defn updater [store op data op-id op-time]
   (case op
     :states (update-states store data)
-    :create-field (create-field store data)
+    :create-field (create-field store data op-id op-time)
     :remove-field (remove-field store data)
     :drag-field (drag-field store data)
+    :toggle-required (toggle-required store data)
+    :update-label (update-label store data)
     :hydrate-storage data
-    store))
+    (do (println "Unknown op" op) store)))

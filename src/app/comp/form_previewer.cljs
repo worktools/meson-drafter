@@ -36,12 +36,12 @@
 (defcomp
  comp-form-previewer
  (states fields)
- (let [cursor (:cursor states), state (or (:data states) {:page :json})]
+ (let [cursor (:cursor states), state (or (:data states) {:page :gen})]
    (div
     {:style (merge ui/expand ui/column)}
     (comp-tabs
      {:selected (:page state)}
-     [{:name :json, :title "JSON config"} {:name :gen, :title "Generated"}]
+     [{:name :gen, :title "Generated"} {:name :json, :title "JSON config"}]
      (fn [info d!] (d! cursor (assoc state :page (:name info)))))
     (case (:page state)
       :json (comp-snippet (js/JSON.stringify (clj->js fields) nil 2))
