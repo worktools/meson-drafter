@@ -10,7 +10,7 @@
             [respo-md.comp.md :refer [comp-md]]
             [app.config :refer [dev?]]
             [respo-ui.comp :refer [comp-tabs comp-placeholder]]
-            [respo-alerts.core :refer [use-modal-menu]]
+            [respo-alerts.core :refer [use-modal-menu use-prompt]]
             [cljs.reader :refer [read-string]]
             [feather.core :refer [comp-icon]]
             [medley.core :refer [find-first]]))
@@ -40,7 +40,9 @@
                      :style {},
                      :items field-types,
                      :on-result (fn [result d!]
-                       (d! :create-field {:type (:value result), :path path}))})]
+                       (d! :create-field {:type (:value result), :path path}))})
+       edit-label (use-prompt (>> states :label) {:title "Edit label"})
+       has-children? (or (= :group (:type field)) (= :nested (:type field)))]
    (div
     {:style (merge
              ui/column
@@ -64,11 +66,26 @@
     (div
      {:style ui/row-parted}
      (<> (render-field-type (:type field)) {:font-family ui/font-fancy, :font-size 16})
+     (div
+      {}
+      (if-not has-children?
+        (input
+         {:type "checkbox",
+          :style {:cursor :pointer, :vertical-align :middle},
+          :required (:required? field),
+          :on-click (fn [e d!] (d! :toggle-required path))}))
+      (=< 8 nil)
+      (if-not (= :group (:type field))
+        (span
+         {:inner-text (or (:label field) "TODO"),
+          :style {:cursor :pointer},
+          :on-click (fn [e d!]
+            ((:show edit-label) d! (fn [text] (d! :update-label {:path path, :text text}))))})))
      (comp-icon
       :x
       {:font-size 14, :color (hsl 0 80 70), :cursor :pointer}
       (fn [e d!] (d! :remove-field path))))
-    (if (or (= :group (:type field)) (= :nested (:type field)))
+    (if has-children?
       (div
        {:style {:margin-left 16}}
        (list->
@@ -86,7 +103,8 @@
           :on-drop (fn [e d!]
             (let [from (read-string (-> (:event e) .-dataTransfer (.getData "path")))]
               (d! :drag-field {:from from, :to (conj path (count (:children field)))})))}))))
-    (:ui create-menu))))
+    (:ui create-menu)
+    (:ui edit-label))))
 
 (defcomp
  comp-form-drafter

@@ -23,8 +23,8 @@
     :decorative {:type :decorative, :render nil}
     :custom
       {:type :custom, :label "TODO", :required? false, :name (str "TODO_" op-id), :render nil}
-    :group {:type :group, :children []}
-    :nested {:type :nested, :children []}
+    :group {:type :group, :label "TODO", :children []}
+    :nested {:type :nested, :label "TODO", :children []}
     (do (println "unknown type for field" data) nil)))
 
 (defn create-field [store data op-id op-time]
@@ -110,11 +110,23 @@
      (concat [:fields] data-path)
      (fn [fields] (vec (remove-nth (last data) fields))))))
 
+(defn toggle-required [store data]
+  (let [data-path (->> data butlast (mapcat (fn [x] [x :children])))]
+    (update-in store (concat [:fields] data-path [(last data) :required?]) not)))
+
+(defn update-label [store data]
+  (let [path (:path data)
+        text (:text data)
+        data-path (->> path butlast (mapcat (fn [x] [x :children])))]
+    (assoc-in store (concat [:fields] data-path [(last path) :label]) text)))
+
 (defn updater [store op data op-id op-time]
   (case op
     :states (update-states store data)
     :create-field (create-field store data op-id op-time)
     :remove-field (remove-field store data)
     :drag-field (drag-field store data)
+    :toggle-required (toggle-required store data)
+    :update-label (update-label store data)
     :hydrate-storage data
-    store))
+    (do (println "Unknown op" op) store)))

@@ -19,8 +19,8 @@
 (defn gen-custom [field]
   (let [items (->> [(gen-item "type" (pr-str "custom"))
                     (gen-item "name" (pr-str (:name field)))
-                    (gen-item "label" (pr-str "TODO"))
-                    (gen-item "required" "true")
+                    (gen-item "label" (pr-str (:label field)))
+                    (gen-item "required" (str (:required? field)))
                     (gen-item "validator" "(x)=>null")
                     (gen-item "render" "(x)=>\"TODO CUSTOM\"")]
                    (string/join (str "," "\n")))]
@@ -32,8 +32,8 @@
 (defn gen-input [field]
   (let [items (->> [(gen-item "type" (pr-str "input"))
                     (gen-item "name" (pr-str (:name field)))
-                    (gen-item "label" (pr-str "TODO"))
-                    (gen-item "required" "true")
+                    (gen-item "label" (pr-str (:label field)))
+                    (gen-item "required" (str (:required? field)))
                     (gen-item "inputProps" "{}")
                     (gen-item "placeholder" (pr-str "TODO"))
                     (gen-item "validator" "(x)=>null")]
@@ -43,8 +43,8 @@
 (defn gen-number [field]
   (let [items (->> [(gen-item "type" (pr-str "number"))
                     (gen-item "name" (pr-str (:name field)))
-                    (gen-item "label" (pr-str "TODO"))
-                    (gen-item "required" "true")
+                    (gen-item "label" (pr-str (:label field)))
+                    (gen-item "required" (str (:required? field)))
                     (gen-item "inputProps" "{}")
                     (gen-item "placeholder" (pr-str "TODO"))
                     (gen-item "validator" "(x)=>null")]
@@ -54,8 +54,8 @@
 (defn gen-select [field]
   (let [items (->> [(gen-item "type" (pr-str "select"))
                     (gen-item "name" (pr-str (:name field)))
-                    (gen-item "label" (pr-str "TODO"))
-                    (gen-item "required" "true")
+                    (gen-item "label" (pr-str (:label field)))
+                    (gen-item "required" (str (:required? field)))
                     (gen-item "inputProps" "{}")
                     (gen-item "placeholder" (pr-str "TODO"))
                     (gen-item "options" (js/JSON.stringify (clj->js (:options field))))
@@ -66,8 +66,8 @@
 (defn gen-textarea [field]
   (let [items (->> [(gen-item "type" (pr-str "textarea"))
                     (gen-item "name" (pr-str (:name field)))
-                    (gen-item "label" (pr-str "TODO"))
-                    (gen-item "required" "true")
+                    (gen-item "label" (pr-str (:label field)))
+                    (gen-item "required" (str (:required? field)))
                     (gen-item "inputProps" "{}")
                     (gen-item "placeholder" (pr-str "TODO"))]
                    (string/join (str "," "\n")))]
@@ -75,14 +75,14 @@
 
 (defn gen-nested [field]
   (let [items (->> [(gen-item "type" (pr-str "nested"))
-                    (gen-item "label" (pr-str "TODO"))
+                    (gen-item "label" (pr-str (or (:label field) "TODO")))
                     (gen-item "children" (gen-form-items (:children field) {}))]
                    (string/join (str "," "\n")))]
     (str "{" items "}")))
 
 (defn gen-group [field]
   (let [items (->> [(gen-item "type" (pr-str "group"))
-                    (gen-item "label" (pr-str "TODO"))
+                    (gen-item "label" (pr-str (or (:label field) "TODO")))
                     (gen-item "horizontal" (pr-str true))
                     (gen-item "itemWidth" (pr-str "50%"))
                     (gen-item "children" (gen-form-items (:children field) {}))]
