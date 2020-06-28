@@ -24,13 +24,13 @@
     :custom
       {:type :custom, :label "TODO", :required? false, :name (str "TODO_" op-id), :render nil}
     :group {:type :group, :children []}
+    :nested {:type :nested, :children []}
     (do (println "unknown type for field" data) nil)))
 
 (defn create-field [store data op-id op-time]
   (let [field-type (:type data)
         path (:path data)
         data-path (->> (:path data) (mapcat (fn [x] [x :children])))]
-    (println "path" (concat [:fields] data-path))
     (update-in
      store
      (concat [:fields] data-path)

@@ -1,5 +1,9 @@
 
-(ns app.generate (:require [clojure.string :as string]))
+(ns app.generate
+  (:require [clojure.string :as string])
+  (:require-macros [clojure.core.strint :refer [<<]]))
+
+(declare gen-nested)
 
 (declare gen-group)
 
@@ -69,6 +73,13 @@
                    (string/join (str "," "\n")))]
     (str "{" items "}")))
 
+(defn gen-nested [field]
+  (let [items (->> [(gen-item "type" (pr-str "nested"))
+                    (gen-item "label" (pr-str "TODO"))
+                    (gen-item "children" (gen-form-items (:children field) {}))]
+                   (string/join (str "," "\n")))]
+    (str "{" items "}")))
+
 (defn gen-group [field]
   (let [items (->> [(gen-item "type" (pr-str "group"))
                     (gen-item "label" (pr-str "TODO"))
@@ -90,7 +101,8 @@
                        :custom (gen-custom field)
                        :number (gen-number field)
                        :group (gen-group field)
-                       (do (println "Unknown:" field) "{type:\"\"}"))))
+                       :nested (gen-nested field)
+                       (do (println "Unknown:" field) (<< "{type:\"UNKNOWN: ~{field}}\"}")))))
                   (string/join (str "," "\n")))]
     (str "[" code "]")))
 

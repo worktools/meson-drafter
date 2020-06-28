@@ -22,7 +22,8 @@
    {:value :select, :display "Select"}
    {:value :decorative, :display "Decorative"}
    {:value :custom, :display "Custom"}
-   {:value :group, :display "Group"}])
+   {:value :group, :display "Group"}
+   {:value :nested, :display "Nested"}])
 
 (defn render-field-type [kind]
   (let [target (find-first (fn [info] (= kind (:value info))) field-types)]
@@ -67,7 +68,7 @@
       :x
       {:font-size 14, :color (hsl 0 80 70), :cursor :pointer}
       (fn [e d!] (d! :remove-field path))))
-    (if (= :group (:type field))
+    (if (or (= :group (:type field)) (= :nested (:type field)))
       (div
        {:style {:margin-left 16}}
        (list->
